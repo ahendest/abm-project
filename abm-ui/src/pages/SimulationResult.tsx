@@ -1,21 +1,39 @@
 import React, { useState } from 'react';
-import SimulationCharts from '../Components/SimulationCharts';
+import NetworkGraph from '../Components/NetworkGraph';
 import '../pages/SimulationResult.scss';
 
-interface SimulationResult{
+export interface NetworkNode {
+  id: string;
+  type?: string;
+  x?: number;
+  y?: number;
+}
+
+export interface NetworkLink {
+  source: string;
+  target: string;
+}
+
+export interface NetworkGraphData {
+  nodes: NetworkNode[];
+  links: NetworkLink[];
+}
+
+export interface SimulationResult{
   counts: {
     liberal: number[];
     conservative: number[];
     neutral: number[];
   };
   stubborn_ratios: number[];
-  average_age: number; // Assuming average_age is a single number based on common usage. Adjust if it's an array from the API.
+  average_age: number; 
   final_counts: {
     liberal: number;
     conservative: number;
     neutral: number;
   };
   media_influence_summary: string;
+  network_graph?: NetworkGraphData;
 }
 
 function SimulationResult() {
@@ -88,16 +106,10 @@ function SimulationResult() {
       </div>
       {error && <p style={{color: "red"}}> Error: {error}</p>}
       <div className='result-container'>
-        {results && (
+        {results && results.network_graph && (
           <div className='results'>
             <h2>Simulation Results:</h2>
-            {/* Simplified data passing, assuming SimulationResult type is accurate */}
-            <SimulationCharts data={{
-              liberal: results.counts.liberal,
-              conservative: results.counts.conservative,
-              neutral: results.counts.neutral,
-              stubborn_ratios: results.stubborn_ratios
-            }} />
+            <NetworkGraph simulationResult={results} />
           </div>
         )}
       </div>

@@ -273,29 +273,57 @@ def run_simulation(N: int, steps: int) -> dict:
     stubborn_ratios = []
 
     for step in range(steps):
-        model.step()
+      model.step()
 
-        ideology_counts["liberal"].append(model.count_type("liberal"))
-        ideology_counts["conservative"].append(model.count_type("conservative"))
-        ideology_counts["neutral"].append(model.count_type("neutral"))
+      ideology_counts["liberal"].append(model.count_type("liberal"))
+      ideology_counts["conservative"].append(model.count_type("conservative"))
+      ideology_counts["neutral"].append(model.count_type("neutral"))
 
-        total_agents = model.schedule.get_agent_count()
-        stubborn_agents = sum(
-            1 for agent in model.schedule.agents.values() if agent.stubborn > 5
-        )
-        ratio = (stubborn_agents / total_agents) if total_agents else 0
-        stubborn_ratios.append(ratio)
+      total_agents = model.schedule.get_agent_count()
+      stubborn_agents = sum(
+          1 for agent in model.schedule.agents.values() if agent.stubborn > 5
+      )
+      ratio = (stubborn_agents / total_agents) if total_agents else 0
+      stubborn_ratios.append(ratio)
 
+    # --- NEW: Extract network graph data ---
+    network_nodes = []
+    # Iterate through all nodes in the social network
+    for agent_id, data in model.social_network.nodes(data=True):
+        agent = model.schedule.agents.get(agent_id)
+        if agent: # Ensure the agent still exists in the schedule
+            node_data = {
+                "id": str(agent_id), # Convert ID to string for frontend compatibility
+                "type": agent.ideology, # Use agent's ideology for node coloring
+            }
+            # Include position data if available (from networkx node attributes)
+            if 'pos' in data:
+                node_data['x'] = data['pos'][0]
+                node_data['y'] = data['pos'][1]
+            network_nodes.append(node_data)
+
+    network_links = []
+    # Iterate through all edges in the social network
+    for u, v in model.social_network.edges():
+        network_links.append({
+            "source": str(u), # Convert source ID to string
+            "target": str(v)  # Convert target ID to string
+        })
+    
     result = {
-        "counts": ideology_counts,
-        "stubborn_ratios": stubborn_ratios,
-        "average_age": model.avg_age,
-        "final_counts": {
-            "liberal": model.count_type("liberal"),
-            "conservative": model.count_type("conservative"),
-            "neutral": model.count_type("neutral"),
-        },
-        "media_influence_summary": model.media_influence_events
+      "counts": ideology_counts,
+      "stubborn_ratios": stubborn_ratios,
+      "average_age": model.avg_age,
+      "final_counts": {
+        "liberal": model.count_type("liberal"),
+        "conservative": model.count_type("conservative"),
+        "neutral": model.count_type("neutral"),
+      },
+      "media_influence_summary": model.media_influence_events,
+      "network_graph": { # NEW FIELD: Include the extracted network data
+          "nodes": network_nodes,
+          "links": network_links
+      }
     }
 
     return result
