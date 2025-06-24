@@ -1,19 +1,17 @@
-import React, { useRef, useEffect } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
 import { NetworkGraphData, NetworkNode, SimulationResult } from '../pages/SimulationResult';
-
+import '../Components/NetworkGraph.scss'
+import ForceGraph3D from 'react-force-graph-3d';
 interface NetworkGraphProps {
   simulationResult: SimulationResult;
 }
 
 export default function NetworkGraph({ simulationResult }: NetworkGraphProps) {
-  const fgRef = useRef<any>(null);
+  const fgRef = useRef<any>(null); // Ref for ForceGraph3D component
+  const containerRef = useRef<HTMLDivElement>(null); // Ref for the div wrapping the graph
 
-  useEffect(() => {
-    if (fgRef.current) {
-      (fgRef.current as any).zoomToFit(400);
-    }
-  }, [simulationResult.network_graph]);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
 
   const getNodeColor = (node: NetworkNode) => {
     switch (node.type) {
@@ -28,9 +26,44 @@ export default function NetworkGraph({ simulationResult }: NetworkGraphProps) {
     }
   };
 
+  // Use useLayoutEffect for initial sizing to prevent flash of incorrect size
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      setWidth(containerRef.current.offsetWidth);
+      setHeight(containerRef.current.offsetHeight);
+    }
+  }, []);
+
+  // Use useEffect for ResizeObserver to handle dynamic resizing
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    let lastWidth = 0;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+
+        if (Math.abs(width - lastWidth) < 1) return;
+        lastWidth = width;
+
+        setWidth(width);
+        setHeight(height);
+
+        if (fgRef.current) {
+          fgRef.current.renderer().setSize(width, height);
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+
   return (
-    <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-      <div>
+    <div className='result-container'>
+      <div className='upper-container'>
         <h3>Simulation Info</h3>
         <ul>
           <li><b>Average Age:</b> {simulationResult.average_age.toFixed(2)}</li>
@@ -53,15 +86,21 @@ export default function NetworkGraph({ simulationResult }: NetworkGraphProps) {
           </li>
         </ul>
       </div>
-      <div style={{ flex: 1 }}>
-        <ForceGraph2D
-          ref={fgRef}
-          graphData={simulationResult.network_graph}
-          nodeLabel="id"
-          nodeVal={5}
-          nodeColor={getNodeColor}
-          linkColor={() => 'rgba(255,255,255,0.2)'}
-        />
+      <div className='lower-container' ref={containerRef}> {/* Attach ref here */}
+        {width > 0 && height > 0 && simulationResult.network_graph ? (
+          <ForceGraph3D
+            ref={fgRef}
+            graphData={simulationResult.network_graph}
+            nodeLabel="id"
+            nodeVal={5}
+            nodeColor={getNodeColor}
+            linkColor={() => 'rgba(255,255,255,0.2)'}
+            width={width}
+            height={height}
+          />
+        ) : (
+          <p>Loading graph...</p>
+        )}
       </div>
     </div>
   );

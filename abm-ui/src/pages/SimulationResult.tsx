@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import NetworkGraph from '../Components/NetworkGraph';
 import '../pages/SimulationResult.scss';
+import SimulationCharts from '../Components/SimulationCharts';
 
 export interface NetworkNode {
   id: string;
@@ -75,8 +76,8 @@ function SimulationResult() {
   };
 
   return (    
-    <div className='container'>
-      <div className='upper'>
+    <div className='simulation-container'>
+      <div className='form-section'>
         <h1>Welcome to ABM Simulation Game!</h1>
         <div className='input-container'>
           <label htmlFor="agentCountInput">
@@ -105,13 +106,25 @@ function SimulationResult() {
         </button>
       </div>
       {error && <p style={{color: "red"}}> Error: {error}</p>}
-      <div className='result-container'>
+      <div className='result-section'>
         {results && results.network_graph && (
-          <div className='results'>
+          <div className='map-results'>
             <h2>Simulation Results:</h2>
             <NetworkGraph simulationResult={results} />
           </div>
         )}
+        <div>
+          {results && (
+            <SimulationCharts
+              data={{
+                liberal: results.counts.liberal,
+                conservative: results.counts.conservative,
+                neutral: results.counts.neutral,
+                stubborn_ratios: results.stubborn_ratios,
+              }}
+            />
+          )}
+        </div>
       </div>
     
     </div>

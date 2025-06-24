@@ -1,0 +1,41 @@
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body{
+}
+.result-container{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1; 
+  min-height: 0; 
+}
+
+  .upper-container{
+    border: 3px solid whitesmoke;
+    border-radius: 5px;
+    overflow-y: auto;
+    max-height: 15rem;
+    padding: 1rem;
+    ul,li{ 
+      list-style-type: none;
+    }
+  }
+
+  .lower-container{
+    border: 3px solid whitesmoke;
+    border-radius: 5px;
+    flex: 1; 
+    position: relative; 
+    overflow: hidden;
+    width: 100%; /* Ensure it takes full available width of its parent */
+
+    canvas{
+      min-height: 15rem;
+    }
+  }
+
+
+
