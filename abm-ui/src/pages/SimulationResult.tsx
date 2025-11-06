@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import NetworkGraph from '../Components/NetworkGraph';
 import '../pages/SimulationResult.scss';
 import SimulationCharts from '../Components/SimulationCharts';
+import SimulationDataPanel from '../Components/SimulationDataPanel';
 
 export interface NetworkNode {
   id: string;
@@ -20,6 +21,22 @@ export interface NetworkGraphData {
   links: NetworkLink[];
 }
 
+export interface ModelTimeseriesPoint {
+  step: number;
+  liberal: number;
+  conservative: number;
+  neutral: number;
+  average_age: number;
+}
+
+export interface AgentSnapshot {
+  step: number;
+  agent_id: number;
+  ideology: string;
+  stubbornness: number;
+  age: number;
+}
+
 export interface SimulationResult{
   counts: {
     liberal: number[];
@@ -35,6 +52,8 @@ export interface SimulationResult{
   };
   media_influence_summary: string;
   network_graph?: NetworkGraphData;
+  model_timeseries: ModelTimeseriesPoint[];
+  agent_snapshots: AgentSnapshot[];
 }
 
 function SimulationResult() {
@@ -106,15 +125,15 @@ function SimulationResult() {
         </button>
       </div>
       {error && <p style={{color: "red"}}> Error: {error}</p>}
-      <div className='result-section'>
-        {results && results.network_graph && (
-          <div className='map-results'>
-            <h2>Simulation Results:</h2>
-            <NetworkGraph simulationResult={results} />
-          </div>
-        )}
-        <div>
-          {results && (
+      {results && (
+        <div className='result-section'>
+          {results.network_graph && (
+            <div className='map-results'>
+              <h2>Simulation Results</h2>
+              <NetworkGraph simulationResult={results} />
+            </div>
+          )}
+          <div className='charts-wrapper'>
             <SimulationCharts
               data={{
                 liberal: results.counts.liberal,
@@ -123,10 +142,13 @@ function SimulationResult() {
                 stubborn_ratios: results.stubborn_ratios,
               }}
             />
-          )}
+          </div>
+          <SimulationDataPanel
+            modelTimeseries={results.model_timeseries}
+            agentSnapshots={results.agent_snapshots}
+          />
         </div>
-      </div>
-    
+      )}
     </div>
  
   )

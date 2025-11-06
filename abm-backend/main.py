@@ -33,6 +33,20 @@ class NetworkGraphData(BaseModel):
     nodes: list[NetwrokNode]
     links: list[NetworkLink]
 
+class ModelTimeseriesPoint(BaseModel):
+    step: int
+    liberal: int
+    conservative: int
+    neutral: int
+    average_age: float
+
+class AgentSnapshot(BaseModel):
+    step: int
+    agent_id: int
+    ideology: str
+    stubbornness: int
+    age: int
+
 class SimulationResult(BaseModel):
     counts: dict
     stubborn_ratios: list[float]
@@ -40,6 +54,8 @@ class SimulationResult(BaseModel):
     final_counts: dict
     media_influence_summary: str
     network_graph: NetworkGraphData
+    model_timeseries: list[ModelTimeseriesPoint]
+    agent_snapshots: list[AgentSnapshot]
 
 @app.post("/simulate", response_model=SimulationResult)
 def simulate(input_data: SimulationInput):

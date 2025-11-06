@@ -1,12 +1,14 @@
+import json
 import random
-from mesa import Agent, Model
 from collections import Counter
-import pandas as pd
-import matplotlib.pyplot as plt
-import networkx as nx
-import mesa
+
 import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import mesa
+import networkx as nx
 import numpy as np
+import pandas as pd
+from mesa import Agent, Model
 from scipy.spatial import cKDTree
 
 
@@ -309,6 +311,37 @@ def run_simulation(N: int, steps: int) -> dict:
             "source": str(u), # Convert source ID to string
             "target": str(v)  # Convert target ID to string
         })
+
+    model_data_df = model.datacollector.get_model_vars_dataframe()
+    model_timeseries = []
+    if model_data_df is not None and not model_data_df.empty:
+      model_data_df = model_data_df.reset_index()
+      step_col = "index" if "index" in model_data_df.columns else "Step"
+      model_data_df = model_data_df.rename(columns={
+          step_col: "step",
+          "Liberal Count": "liberal",
+          "Conservative Count": "conservative",
+          "Neutral Count": "neutral",
+          "Average Age": "average_age"
+      })
+      if "step" in model_data_df:
+        model_data_df["step"] = model_data_df["step"].astype(int) + 1
+      model_timeseries = json.loads(model_data_df.to_json(orient="records"))
+
+    agent_data_df = model.datacollector.get_agent_vars_dataframe()
+    agent_snapshots = []
+    if agent_data_df is not None and not agent_data_df.empty:
+      agent_data_df = agent_data_df.reset_index()
+      agent_data_df = agent_data_df.rename(columns={
+          "Step": "step",
+          "AgentID": "agent_id",
+          "Ideology": "ideology",
+          "Stubbornness": "stubbornness",
+          "Age": "age"
+      })
+      if "step" in agent_data_df:
+        agent_data_df["step"] = agent_data_df["step"].astype(int) + 1
+      agent_snapshots = json.loads(agent_data_df[["step", "agent_id", "ideology", "stubbornness", "age"]].to_json(orient="records"))
     
     result = {
       "counts": ideology_counts,
@@ -323,7 +356,9 @@ def run_simulation(N: int, steps: int) -> dict:
       "network_graph": { # NEW FIELD: Include the extracted network data
           "nodes": network_nodes,
           "links": network_links
-      }
+      },
+      "model_timeseries": model_timeseries,
+      "agent_snapshots": agent_snapshots
     }
 
     return result
