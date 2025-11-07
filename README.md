@@ -37,6 +37,8 @@ cd abm-backend
 python -m venv .venv                # optional if you do not already have one
 .venv\Scripts\activate              # Windows PowerShell
 pip install -r requirements.txt     # installs FastAPI, Mesa, pandas, matplotlib, etc.
+uvicorn main:app --reload #start backend, or: 
+python -m uvicorn main:app --reload #choose port:
 python -m uvicorn main:app --reload --port 8001
 ```
 

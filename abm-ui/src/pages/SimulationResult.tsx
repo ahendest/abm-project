@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import NetworkGraph from '../Components/NetworkGraph';
 import '../pages/SimulationResult.scss';
 import SimulationCharts from '../Components/SimulationCharts';
@@ -31,13 +31,13 @@ export interface ModelTimeseriesPoint {
 
 export interface AgentSnapshot {
   step: number;
-  agent_id: number;
+  agent_id: string | number;
   ideology: string;
   stubbornness: number;
   age: number;
 }
 
-export interface SimulationResult{
+export interface SimulationResponse{
   counts: {
     liberal: number[];
     conservative: number[];
@@ -59,7 +59,7 @@ export interface SimulationResult{
 function SimulationResult() {
   const [agentCount, setAgentCount] = useState<number>(200);
   const [stepCount, setStepCount] = useState<number>(40);
-  const [results, setResults] = useState<SimulationResult | null>(null);
+  const [results, setResults] = useState<SimulationResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +82,7 @@ function SimulationResult() {
       if(!response.ok){
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: SimulationResult = await response.json();
+      const data: SimulationResponse = await response.json();
       setResults(data);
     }
     catch (e: any){

@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
-import { NetworkGraphData, NetworkNode, SimulationResult } from '../pages/SimulationResult';
+import { NetworkGraphData, NetworkNode, SimulationResponse } from '../pages/SimulationResult';
 import '../Components/NetworkGraph.scss'
 import ForceGraph3D from 'react-force-graph-3d';
 interface NetworkGraphProps {
-  simulationResult: SimulationResult;
+  simulationResult: SimulationResponse;
 }
 
 export default function NetworkGraph({ simulationResult }: NetworkGraphProps) {
@@ -41,18 +41,15 @@ export default function NetworkGraph({ simulationResult }: NetworkGraphProps) {
     let lastWidth = 0;
 
     const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width, height } = entry.contentRect;
-
         if (Math.abs(width - lastWidth) < 1) return;
         lastWidth = width;
 
-        setWidth(width);
-        setHeight(height);
-
-        if (fgRef.current) {
-          fgRef.current.renderer().setSize(width, height);
-        }
+        requestAnimationFrame(() => {
+          setWidth(width);
+          setHeight(height);
+        });
       }
     });
 

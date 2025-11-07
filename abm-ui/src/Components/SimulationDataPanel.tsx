@@ -1,4 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { MouseEvent, useEffect, useMemo, useState } from 'react';
+import {
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { AgentSnapshot, ModelTimeseriesPoint } from '../pages/SimulationResult';
 import './SimulationDataPanel.scss';
 
@@ -22,6 +32,7 @@ export default function SimulationDataPanel({
   }, [agentSnapshots]);
 
   const [selectedStep, setSelectedStep] = useState<number>(steps[0] ?? 1);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (steps.length > 0 && !steps.includes(selectedStep)) {
@@ -32,6 +43,31 @@ export default function SimulationDataPanel({
   const agentsForStep = useMemo(() => {
     return agentSnapshots.filter((snapshot) => snapshot.step === selectedStep);
   }, [agentSnapshots, selectedStep]);
+
+  const agentHistory = useMemo(() => {
+    if (selectedAgentId === null) return [];
+    return agentSnapshots
+      .filter((snapshot) => String(snapshot.agent_id) === selectedAgentId)
+      .sort((a, b) => a.step - b.step);
+  }, [agentSnapshots, selectedAgentId]);
+
+  const handleAgentClick = (agentId: string, event?: MouseEvent) => {
+    event?.stopPropagation();
+    setSelectedAgentId((prev) => (prev === agentId ? null : agentId));
+  };
+
+  const ideologyValueMap: Record<string, number> = {
+    conservative: -1,
+    neutral: 0,
+    liberal: 1,
+  };
+
+  const historyChartData = agentHistory.map((entry) => ({
+    step: entry.step,
+    stubbornness: entry.stubbornness,
+    age: entry.age,
+    ideologyValue: ideologyValueMap[entry.ideology] ?? 0,
+  }));
 
   return (
     <div className='data-panel'>
@@ -117,18 +153,88 @@ export default function SimulationDataPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {agentsForStep.map((agent) => (
-                    <tr key={`${agent.step}-${agent.agent_id}`}>
-                      <td>{agent.agent_id}</td>
-                      <td className={`ideology ideology--${agent.ideology}`}>
-                        {agent.ideology}
-                      </td>
-                      <td>{agent.stubbornness}</td>
-                      <td>{agent.age}</td>
-                    </tr>
-                  ))}
+                  {agentsForStep.map((agent) => {
+                    const agentId = String(agent.agent_id);
+                    return (
+                      <tr
+                        key={`${agent.step}-${agentId}`}
+                        className={selectedAgentId === agentId ? 'selected-row' : ''}
+                        onClick={() => handleAgentClick(agentId)}
+                      >
+                        <td className='agent-link'>
+                          <button type='button' onClick={(event) => handleAgentClick(agentId, event)}>
+                            {agentId}
+                          </button>
+                        </td>
+                        <td className={`ideology ideology--${agent.ideology}`}>
+                          {agent.ideology}
+                        </td>
+                        <td>{agent.stubbornness}</td>
+                        <td>{agent.age}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+              <div className='agent-history'>
+                {selectedAgentId === null ? (
+                  <p className='empty-state'>Select an Agent ID to inspect their evolution over time.</p>
+                ) : agentHistory.length === 0 ? (
+                  <p className='empty-state'>No history found for agent #{selectedAgentId}.</p>
+                ) : (
+                  <>
+                    <div className='agent-history__header'>
+                      <h3>Agent #{selectedAgentId} – Step-by-step</h3>
+                      <button type='button' onClick={() => setSelectedAgentId(null)}>
+                        Clear
+                      </button>
+                    </div>
+                    <table className='data-table compact'>
+                      <thead>
+                        <tr>
+                          <th>Step</th>
+                          <th>Ideology</th>
+                          <th>Stubbornness</th>
+                          <th>Age</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {agentHistory.map((entry) => (
+                          <tr key={`${entry.step}-${entry.agent_id}`}>
+                            <td>{entry.step}</td>
+                            <td className={`ideology ideology--${entry.ideology}`}>
+                              {entry.ideology}
+                            </td>
+                            <td>{entry.stubbornness}</td>
+                            <td>{entry.age}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className='agent-history__chart'>
+                      <ResponsiveContainer width='100%' height={250}>
+                        <LineChart data={historyChartData}>
+                          <CartesianGrid strokeDasharray='3 3' />
+                          <XAxis dataKey='step' />
+                          <YAxis yAxisId='left' label={{ value: 'Age / Stubbornness', angle: -90, position: 'insideLeft' }} />
+                          <YAxis
+                            yAxisId='right'
+                            orientation='right'
+                            domain={[-1.2, 1.2]}
+                            ticks={[-1, -0.5, 0, 0.5, 1]}
+                            label={{ value: 'Ideology (Cons=-1, Neu=0, Lib=1)', angle: 90, position: 'insideRight' }}
+                          />
+                          <Tooltip />
+                          <Legend />
+                          <Line yAxisId='left' type='monotone' dataKey='age' stroke='#34d399' name='Age' dot={false} />
+                          <Line yAxisId='left' type='monotone' dataKey='stubbornness' stroke='#fbbf24' name='Stubbornness' dot={false} />
+                          <Line yAxisId='right' type='stepAfter' dataKey='ideologyValue' stroke='#60a5fa' name='Ideology' dot />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </div>
             </>
           )}
         </div>
